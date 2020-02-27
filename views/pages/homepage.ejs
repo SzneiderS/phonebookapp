@@ -1,0 +1,39 @@
+<div class="container">
+	<div class="row">
+		<div class="col">
+			<table class="table table-bordered font-weight-bold" id="infoLog">
+			</table>
+		</div>
+	</div>
+    <div class="row">
+        <div class="col">
+            <table class="table table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col">Numer telefonu</th>
+                        <th scope="col" colspan="2">Opis</th>
+                    </tr>
+                </thead>
+                <tfoot class="thead-dark">
+                    <tr>
+                        <th>
+                            <input type="text" name="" id="phoneNumberInput" class="form-control"
+                                placeholder="Numer telefonu">
+                        </th>
+                        <th><input type="text" name="" id="phoneDescInput" class="form-control" placeholder="Opis"></th>
+                        <th><input type="button" class="btn btn-primary" value="Dodaj" onclick="createEntry()"></th>
+                    </tr>
+                </tfoot>
+                <tbody id="phonebook_tbody" ng-controller="PhonebookController">
+                    <tr ng-repeat="entry in phoneEntries | orderBy: '-createdAt'">
+                        <td>{{ entry.phoneNumber }}</td>
+                        <td>{{ entry.description }}</td>
+                        <td class="text-center"><input type="button" class="btn btn-danger ng-binding" value="Usuń"
+                                ng-click="deleteEntry(entry.id)">
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
