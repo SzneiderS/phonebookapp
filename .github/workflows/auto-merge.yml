@@ -1,12 +1,6 @@
 name: Auto-merge PRs
 
 on:
-  pull_request_target:
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - labeled
   workflow_run:
     workflows: ["CI"]
     types:
@@ -26,22 +20,20 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          // Get the PR number
-          let prNumber;
-          
-          if (context.eventName === 'pull_request_target') {
-            prNumber = context.payload.pull_request.number;
-          } else if (context.eventName === 'workflow_run') {
-            const prs = context.payload.workflow_run.pull_requests;
-            if (!prs || prs.length === 0) {
-              console.log('No pull request associated with this workflow run');
-              return;
-            }
-            prNumber = prs[0].number;
-          } else {
-            console.log('Unexpected event type');
+          // Only proceed if the workflow run was successful
+          if (context.payload.workflow_run.conclusion !== 'success') {
+            console.log('Workflow did not succeed, skipping auto-merge');
             return;
           }
+          
+          // Get the PR number
+          const prs = context.payload.workflow_run.pull_requests;
+          if (!prs || prs.length === 0) {
+            console.log('No pull request associated with this workflow run');
+            return;
+          }
+          
+          const prNumber = prs[0].number;
           
           console.log(`Processing PR #${prNumber}`);
           
@@ -77,19 +69,23 @@ jobs:
             ref: pr.head.sha
           });
           
+          // Require that checks have actually run
+          if (checkRuns.check_runs.length === 0 && status.statuses.length === 0) {
+            console.log('No checks have run yet, skipping auto-merge');
+            return;
+          }
+          
           // Check if all status checks passed
           const statusChecksPassed = status.state === 'success' || status.statuses.length === 0;
           
           // Check if all check runs passed
-          const allCheckRunsCompleted = checkRuns.check_runs.length === 0 || 
-            checkRuns.check_runs.every(check => check.status === 'completed');
+          const allCheckRunsCompleted = checkRuns.check_runs.every(check => check.status === 'completed');
           
-          const allCheckRunsPassed = checkRuns.check_runs.length === 0 ||
-            checkRuns.check_runs.every(check => 
-              check.conclusion === 'success' || 
-              check.conclusion === 'neutral' || 
-              check.conclusion === 'skipped'
-            );
+          const allCheckRunsPassed = checkRuns.check_runs.every(check => 
+            check.conclusion === 'success' || 
+            check.conclusion === 'neutral' || 
+            check.conclusion === 'skipped'
+          );
           
           console.log(`Status checks: ${status.state} (passed: ${statusChecksPassed})`);
           console.log(`Check runs completed: ${allCheckRunsCompleted}`);
