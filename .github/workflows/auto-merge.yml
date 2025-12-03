@@ -33,6 +33,10 @@ jobs:
             return;
           }
           
+          if (prs.length > 1) {
+            console.log(`Warning: Multiple PRs (${prs.length}) associated with this workflow run, processing only the first one`);
+          }
+          
           const prNumber = prs[0].number;
           
           console.log(`Processing PR #${prNumber}`);
@@ -44,9 +48,26 @@ jobs:
             pull_number: prNumber
           });
           
+          // Check if PR is in draft state
+          if (pr.draft) {
+            console.log('PR is in draft state, skipping auto-merge');
+            return;
+          }
+          
+          // Check if PR author has write permissions
+          const { data: permissions } = await github.rest.repos.getCollaboratorPermissionLevel({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            username: pr.user.login
+          });
+          if (!['admin', 'write'].includes(permissions.permission)) {
+            console.log('PR author does not have write permissions, skipping auto-merge');
+            return;
+          }
+          
           // Check if PR is mergeable
-          if (pr.mergeable === false) {
-            console.log('PR has merge conflicts');
+          if (pr.mergeable !== true) {
+            console.log('PR is not mergeable or mergeable state is unknown');
             return;
           }
           
@@ -84,9 +105,7 @@ jobs:
           
           const allCheckRunsPassed = checkRuns.check_runs.length === 0 ||
             checkRuns.check_runs.every(check => 
-              check.conclusion === 'success' || 
-              check.conclusion === 'neutral' || 
-              check.conclusion === 'skipped'
+              check.conclusion === 'success'
             );
           
           console.log(`Status checks: ${status.state} (passed: ${statusChecksPassed})`);
@@ -106,7 +125,8 @@ jobs:
               });
               console.log(`✓ Successfully merged PR #${prNumber}`);
             } catch (error) {
-              console.log(`✗ Failed to merge PR #${prNumber}: ${error.message}`);
+              core.setFailed(`Failed to merge PR #${prNumber}: ${error.message}`);
+              throw error;
             }
           } else {
             console.log('Not all checks passed yet, skipping auto-merge');
