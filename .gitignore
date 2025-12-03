@@ -111,17 +111,17 @@ node_modules
 # Build directories
 ################################################
 
-dist
-build
-.build
+dist/
+build/
+.build/
 
 
 ################################################
 # Test Coverage
 ################################################
 
-coverage
-.nyc_output
+coverage/
+.nyc_output/
 
 
 ################################################
@@ -156,7 +156,6 @@ coverage
 
 *~
 *#
-.DS_STORE
 .DS_Store
 Thumbs.db
 desktop.ini
