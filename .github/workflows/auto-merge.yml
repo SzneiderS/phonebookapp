@@ -75,17 +75,19 @@ jobs:
             return;
           }
           
-          // Check if all status checks passed
-          const statusChecksPassed = status.state === 'success' || status.statuses.length === 0;
+          // Check if all status checks passed (if any exist)
+          const statusChecksPassed = status.statuses.length === 0 || status.state === 'success';
           
-          // Check if all check runs passed
-          const allCheckRunsCompleted = checkRuns.check_runs.every(check => check.status === 'completed');
+          // Check if all check runs passed (if any exist)
+          const allCheckRunsCompleted = checkRuns.check_runs.length === 0 || 
+            checkRuns.check_runs.every(check => check.status === 'completed');
           
-          const allCheckRunsPassed = checkRuns.check_runs.every(check => 
-            check.conclusion === 'success' || 
-            check.conclusion === 'neutral' || 
-            check.conclusion === 'skipped'
-          );
+          const allCheckRunsPassed = checkRuns.check_runs.length === 0 ||
+            checkRuns.check_runs.every(check => 
+              check.conclusion === 'success' || 
+              check.conclusion === 'neutral' || 
+              check.conclusion === 'skipped'
+            );
           
           console.log(`Status checks: ${status.state} (passed: ${statusChecksPassed})`);
           console.log(`Check runs completed: ${allCheckRunsCompleted}`);
